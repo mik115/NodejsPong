@@ -57,21 +57,17 @@ var settingsConfiguration= {
         'height' : 300,
         'player_margin': 10,           //area behind player paddles
         'foreground': "#FFFFFF",
-        'background': "#000000"
+        'background': "#000000",
+        "paddle_inc" : 10
     },
     divider:{
         'width': 4
     },
-    paddle1:{
+    paddle:{
         'width': 8,
         'height': 64},
-    paddle2:{
-        'width':8,
-        'height': 64,
-    },
     ball:{
-        'width': 10,
-        'height': 10,
+        'size': 10,
         'speed': 2
     }
 };
@@ -85,40 +81,26 @@ var model={
         height : settingsConfiguration.playerArea.height,
         player_margin: settingsConfiguration.playerArea.player_margin,           //area behind player paddles
 	    foreground: settingsConfiguration.playerArea.foreground,
-        background: settingsConfiguration.playerArea.background
+        background: settingsConfiguration.playerArea.background,
+        paddle_inc: settingsConfiguration.playerArea.paddle_inc
     },
     divider:{
         width: settingsConfiguration.divider.width,    
         position: settingsConfiguration.playerArea.width/2
     },
 	ball:{
-        width: settingsConfiguration.ball.width,
-        height: settingsConfiguration.ball.height,
+        size: settingsConfiguration.ball.size,
         speed:settingsConfiguration.ball.speed,
-        x:(settingsConfiguration.playerArea.width/2) - (settingsConfiguration.ball.width),
-        y:(settingsConfiguration.playerArea.height/2) - (settingsConfiguration.ball.height),
+        x:(settingsConfiguration.playerArea.width/2) - (settingsConfiguration.ball.size),
+        y:(settingsConfiguration.playerArea.height/2) - (settingsConfiguration.ball.size),
         direction: null
     },
-    players:[
-        {
-            paddle:{
-                width:settingsConfiguration.paddle1.width,
-                height: settingsConfiguration.paddle1.height,
-                x: settingsConfiguration.playerArea.player_margin,
-                y: (settingsConfiguration.playerArea.height /2 ) - (settingsConfiguration.paddle1.height / 2)
-            },
-            score: 0
-        },
-        {
-            paddle:{
-                width: settingsConfiguration.paddle2.width,
-                height: settingsConfiguration.paddle2.height,
-                x: (settingsConfiguration.playerArea.width - settingsConfiguration.playerArea.player_margin - settingsConfiguration.paddle2.width),
-                y: (settingsConfiguration.playerArea.height /2 ) - (settingsConfiguration.paddle2.height / 2)
-            },
-            score: 0
+    players:{
+        paddle:{
+            width:settingsConfiguration.paddle.width,
+            height: settingsConfiguration.paddle.height,
         }
-    ]
+    }
 };
 
 /* socket.emit('handshake');
@@ -139,9 +121,9 @@ io.sockets.on('connection', function (socket) {
 	
     var userId = connectedUsers;
     if(connectedUsers==0){
-        socket.emit("userIdAssegnation", { io: userId, avversario: 1});
+        socket.emit("userIdAssegnation", { mul : 0});
     }else{
-    	socket.emit("userIdAssegnation", { io: userId, avversario: 0});
+    	socket.emit("userIdAssegnation", { mul : 1});
     }
     console.log("assegnato user id "+userId);
     connectedUsers++;
@@ -153,7 +135,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('readyToPlay', function (data) {
     	console.log("users: "+connectedUsers)
     	if(connectedUsers==2){
-    		io.sockets.emit('startGame');
+    		io.sockets.emit('startGame', Math.random()*360);
     		console.log("gameStarted");
     		StartGame();
     	}
@@ -161,7 +143,7 @@ io.sockets.on('connection', function (socket) {
 
 
     socket.on('paddle_position', function (data) {
-        model.players[userId].paddle.y= data;
+        socket.broadcast.emit('paddle_position', data);
     });
 
     socket.on('disconnect', function (socket) {
@@ -176,9 +158,9 @@ function gameLogic(){
 
 function testCollisions(){
     //collisione bordo palla
-	if((model.ball.y >= model.playerArea.height - model.ball.height) || model.ball.y <= 0)
+/*	if((model.ball.y >= model.playerArea.height - model.ball.height) || model.ball.y <= 0)
         model.ball.direction = -model.ball.direction;
-    
+    **/
 	//punti segnati
     if(model.ball['x'] <= 0 || model.ball.x >= (model.playerArea.width - model.ball.width)){
 		if(model.ball['x'] <= 0){
@@ -219,8 +201,10 @@ function testCollisions(){
 }
 
 function calculateBallPosition(){
+    /*
 	model.ball.x = model.ball.x + Math.cos((model.ball.direction)*Math.PI/180) * model.ball.speed;
     model.ball.y = model.ball.y + Math.sin((model.ball.direction)*Math.PI/180) * model.ball.speed;
+    */
 }
 
 function renderGame(){
@@ -228,7 +212,7 @@ function renderGame(){
 }
 
 function StartGame(){
-	game = setInterval(gameLogic, 25);
+	//game = setInterval(gameLogic, 25);
 }
 
 function resetGame(){

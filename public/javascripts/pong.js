@@ -1,23 +1,63 @@
- var ioPlayer, avversario;
 
 window.onload = function() {
-   // var socket = io.connect('http://localhost:8080');
-//   var socket = io.connect('http://192.168.12.187:8080');
-   var socket = io.connect('http://37.117.40.223:8080');
-    
+    var socket = io.connect('http://localhost:8080');      //local test
+//   var socket = io.connect('http://192.168.12.187:8080');  //office Address
+//   var socket = io.connect('http://37.117.40.223:8080');   //home address
+     
   
+   var Game={
+        playarea: {
+            canvas: document.getElementById('tutorial'),
+            context : document.getElementById('tutorial').getContext('2d'),
+            divider:{
+                pos: null,
+                width: null
+            },
+            attributes:{
+                width: null,
+                height: null,
+                player_margin: null,
+                foreground: null,
+                background: null,
+                paddle_inc: null
+            }
+        },
+        ball:{
+            size: null,
+            direction: null,
+            speed: null,
+            x: null,
+            y: null
+        },
+        players:{
+            mul: 1,
+            ioPlayer:{//1
+			    id:0,
+			    score:0,
+			    direction:null,
+			    paddle: {
+                    width: null,
+                    height: null,
+                    x: null,
+                    y: null
+                }
+		    },
+            avversario: {//2
+			    id:1,
+			    score:0,
+			    direction:null,
+			    paddle: {
+                    width: null,
+                    height: null,
+                    x: null,
+                    y: null
+                }
+		    }
+        }
+    }; 
     
-    // globals
-    var playarea = {
-		canvas : document.getElementById('tutorial'),
-		context : document.getElementById('tutorial').getContext('2d'),
-		divider: new Array(),
-		ball : new Array(),
-		pa: new Array()
-    };
-    
-    playarea.canvas.width = 400;
-    playarea.canvas.height = 300;
+    Game.playarea.canvas.width = 400;
+    Game.playarea.canvas.height = 300;
     
     up = -1;
     down = 1;
@@ -26,102 +66,101 @@ window.onload = function() {
     key_up = 38;
     key_down = 40;
 
-    paddle_inc = 10;        //how many pixels paddle can move in either direction
-
-    players = [
-		{//1
-			id:0,
-			score:0,
-			direction:null,
-			paddle: new Array()
-		},
-		{//2
-			id:1,
-			score:0,
-			direction:null,
-			paddle: new Array()
-		}
-	];
-
     function init(settings)
     {	
-        playarea.pa['width'] = settings.playerArea.width;
-        playarea.pa['height'] = settings.playerArea.height;
-        playarea.pa['player_margin'] = settings.playerArea.player_margin;
-        playarea.pa['foreground'] = settings.playerArea.foreground;
-        playarea.pa['background'] = settings.playerArea.background;
+        console.log(settings);
 
-        playarea.divider['pos'] = settings.divider.position;
-        playarea.divider['width'] = settings.divider.width;
+        Game.playarea.attributes.width = settings.playerArea.width;
+        Game.playarea.attributes.height = settings.playerArea.height;
+        Game.playarea.attributes.player_margin = settings.playerArea.player_margin;
+        Game.playarea.attributes.foreground = settings.playerArea.foreground;
+        Game.playarea.attributes.background = settings.playerArea.background;
+        Game.playarea.attributes.paddle_inc = settings.playerArea.paddle_inc;
 
-        players[avversario].paddle['width'] = settings.players[avversario].paddle.width;
-        players[avversario].paddle['height'] = settings.players[avversario].paddle.height;
-        players[avversario].paddle['x'] = settings.players[avversario].paddle.x;
-        players[avversario].paddle['y'] = settings.players[avversario].paddle.y;
+        Game.playarea.divider.pos = settings.divider.position;
+        Game.playarea.divider.width = settings.divider.width;
 
-        players[ioPlayer].paddle['width'] = settings.players[ioPlayer].paddle.width;
-        players[ioPlayer].paddle['height'] = settings.players[ioPlayer].paddle.height;
-        players[ioPlayer].paddle['x'] = settings.players[ioPlayer].paddle.x;
-        players[ioPlayer].paddle['y'] = settings.players[ioPlayer].paddle.y;
+        Game.players.avversario.paddle.width = settings.players.paddle.width;
+        Game.players.avversario.paddle.height = settings.players.paddle.height;
+        Game.players.avversario.paddle.x = Game.playarea.attributes.player_margin;
+        Game.players.avversario.paddle.y = (Game.playarea.attributes.height/2)-(Game.players.avversario.paddle.height/2);
 
-        playarea.ball['width'] = settings.ball.width;
-        playarea.ball['height'] = settings.ball.height;
-        playarea.ball['x'] = settings.ball.x;
-        playarea.ball['y'] = settings.ball.y;
+        Game.players.ioPlayer.paddle.width = settings.players.paddle.width;
+        Game.players.ioPlayer.paddle.height = settings.players.paddle.height;
+        Game.players.ioPlayer.paddle.x = Game.playarea.attributes.width - Game.playarea.attributes.player_margin - settings.players.paddle.width;
+        Game.players.ioPlayer.paddle.y = (Game.playarea.attributes.height/2)-(Game.players.avversario.paddle.height/2);
+
+        Game.ball.speed = settings.ball.speed;
+        Game.ball.size = settings.ball.size;
+        Game.ball.x = settings.ball.x;
+        Game.ball.y = settings.ball.y;
     }
 
-    function renderPlayarea(data)
+    function renderPlayarea()
     {
-        playarea.context.beginPath();
-
-        playarea.context.clearRect(0,0,playarea.pa['width'], playarea.pa['height']);
-        playarea.context.fillStyle = playarea.pa['background'];
-        playarea.context.strokeStyle = playarea.pa['foreground'];
-        playarea.context.fillRect(0,0, playarea.pa['width'], playarea.pa['height']);
         
-        if(players[ioPlayer].direction != null)
-        {
-            if(players[ioPlayer].direction == up)
-            	players[ioPlayer].paddle['y'] = players[ioPlayer].paddle['y'] - paddle_inc;
-            else
-            	players[ioPlayer].paddle['y'] = players[ioPlayer].paddle['y'] + paddle_inc;
+        Game.playarea.context.beginPath();
 
-            socket.emit('paddle_position', players[ioPlayer].paddle['y']);  
+        Game.playarea.context.clearRect(0,0, Game.playarea.attributes.width, Game.playarea.attributes.height);
+        Game.playarea.context.fillStyle = Game.playarea.attributes.background;
+        Game.playarea.context.strokeStyle = Game.playarea.attributes.foreground;
+        Game.playarea.context.fillRect(0,0, Game.playarea.attributes.width, Game.playarea.attributes.height);
+        
+        if(Game.players.ioPlayer.direction != null)
+        {
+            if(Game.players.ioPlayer.direction == up)
+            	Game.players.ioPlayer.paddle.y = Game.players.ioPlayer.paddle.y - Game.playarea.attributes.paddle_inc;
+            else
+            	Game.players.ioPlayer.paddle.y = players.ioPlayer.paddle.y + Game.playarea.attributes.paddle_inc;
+
+            socket.emit('paddle_position', Game.players.ioPlayer.paddle.y);  
         }
         //disegna i paddle sul campo di gioco
-        playarea.context.rect(players[avversario].paddle.x, data.players[avversario],
-        		players[avversario].paddle.width,players[avversario].paddle.height);
+        Game.playarea.context.rect(Game.players.avversario.paddle.x, Game.players.avversario.paddle.y,
+        		Game.players.avversario.paddle.width, Game.players.avversario.paddle.height);
         
-        playarea.context.rect(players[ioPlayer].paddle.x, data.players[ioPlayer],
-        		players[ioPlayer].paddle.width,players[ioPlayer].paddle.height);
+        Game.playarea.context.rect(Game.players.ioPlayer.paddle.x, Game.players.ioPlayer.paddle.y,
+        		Game.players.ioPlayer.paddle.width, Game.players.ioPlayer.paddle.height);
 
         //disegna la palla sul campo di gioco
-        playarea.context.rect(data.ball_x, data.ball_y, 
-        		playarea.ball['width'], playarea.ball['height']);
+        Game.playarea.context.rect(Game.ball.x, Game.ball.y, 
+        		Game.ball.size, Game.ball.size);
 
-        playarea.context.fillStyle = playarea.pa['foreground'];
-        playarea.context.fill();
+        Game.playarea.context.fillStyle = Game.playarea.attributes.foreground;
+        Game.playarea.context.fill();
 
-        playarea.context.beginPath();
+        Game.playarea.context.beginPath();
         //redraw divider
-        playarea.context.lineWidth = playarea.divider['width'];
-        playarea.context.lineTo(playarea.divider['pos'], 0);
-        playarea.context.lineTo(playarea.divider['pos'], playarea.pa['height']);
-        playarea.context.lineWidth = 1;
+        Game.playarea.context.lineWidth = Game.playarea.divider.width;
+        Game.playarea.context.lineTo(Game.playarea.divider.pos, 0);
+        Game.playarea.context.lineTo(Game.playarea.divider.pos, Game.playarea.pa.height);
+        Game.playarea.context.lineWidth = 1;
 
-        playarea.context.stroke();
-        playarea.context.closePath();
+        Game.playarea.context.stroke();
+        Game.playarea.context.closePath();
+        
+        /*
+        console.log("Paddle mio "+ Game.players[ioPlayer].paddle.y);
+        console.log("Paddle avversario " + Game.players[avversario].paddle.y);
+        console.log("Ball Position "+ Game.ball.x +" - "+ Game.ball.y, "Direction: "+ Game.ball.direction);
+        */
     }
 
     function testCollisions()
     {
         //make sure paddles don't go beyond play area
-        if(((players[ioPlayer].paddle['y'] <= 0) && (players[ioPlayer].direction == up)) || 
-        		((players[ioPlayer].paddle['y'] >= (playarea.pa['height'] - players[ioPlayer].paddle['height'])) 
-        				&& (players[ioPlayer].direction == down)))
-        	players[ioPlayer].direction = null;
-
-        //
+        if(((Game.players.ioPlayer.paddle.y <= 0) && (Game.players.ioPlayer.direction == up)) || 
+        		((Game.players.ioPlayer.paddle.y >= (Game.playarea.attributes.height - Game.players.ioPlayer.paddle.height)) 
+        				&& (Game.players.ioPlayer.direction == down)))
+        	Game.players.ioPlayer.direction = null;
+    
+        //spostamento della ball
+        Game.ball.x = Game.ball.x + Math.cos((Game.ball.direction)*Math.PI/180) * Game.ball.speed;
+        Game.ball.y = Game.ball.y + Math.sin((Game.ball.direction)*Math.PI/180) * Game.ball.speed;
+        
+        //Ball bounce against ring border
+        if((Game.ball.y >= Game.playarea.attributes.height - Game.ball.size) || Game.ball.y <= 0)
+            Game.ball.direction = -Game.ball.direction;
     }
 
     document.onkeydown = function(ev)
@@ -129,10 +168,10 @@ window.onload = function() {
         switch(ev.keyCode)
         {
             case key_up:
-            	players[ioPlayer].direction = up;
+            	Game.players.ioPlayer.direction = up;
             	break;
             case key_down:
-            	players[ioPlayer].direction = down;
+            	Game.players.ioPlayer.direction = down;
             	break;
         }
     }
@@ -143,14 +182,15 @@ window.onload = function() {
         {
             case key_up:
             case key_down:
-            	players[ioPlayer].direction = null;
+            	Game.players.ioPlayer.direction = null;
             break;
         }
     }
     
     socket.on('userIdAssegnation', function(data){
-        ioPlayer = data.io;
-        avversario = data.avversario;
+        if(data.mul != 0)
+            Game.players.mul=data.mul;
+        console.log("Mul: "+data);
         socket.emit('getGameConfiguration');
     });
     
@@ -164,16 +204,31 @@ window.onload = function() {
     	renderPlayarea(data);
     });
 
-    socket.on("startGame", function(){
+    socket.on("startGame", function(data){
+        Game.ball.direction = calculateBallDirection(data);
         setInterval(function(){
             testCollisions();
-            renderPlayarea(data);
+            renderPlayarea();
         }, 25);
     });
     
-    socket.on('score', function(data){
-    	var scores = $(".score");
-    	$(scores[ioPlayer]).html(data[ioPlayer]);
-    	$(scores[avversario]).html(data[avversario]);
+    socket.on("paddle_position", function(data){
+        Game.players.avversario.paddle.y= data;    
     });
+
+    socket.on('score', function(data){
+    /*	var scores = $(".score");
+    	$(scores[ioPlayer]).html(data[ioPlayer]);
+        Game.players[ioPlayer].score = data[ioPlayer];
+    	$(scores[avversario]).html(data[avversario]);
+        Game.players[avversario].score = data[avversario];*/
+    });
+
+    function calculateBallDirection(direction){
+        if(Game.players.mul!=0)
+            return 180 - direction;
+        else
+            return direction;
+    }
 }
+
