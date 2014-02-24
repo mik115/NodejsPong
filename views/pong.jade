@@ -1,0 +1,17 @@
+﻿extends layout
+
+block head
+	link(rel='stylesheet', href='/stylesheets/pong.css')
+	script(src='/socket.io/socket.io.js' type='text/javascript')
+	script(src='/javascripts/pong.js', type='text/javascript')
+
+
+
+block content
+	canvas#tutorial
+	
+	div#playersScore
+		p#score1 PLAYER1 
+			span.score 0
+		P#score2 PLAYER2 
+			span.score 0

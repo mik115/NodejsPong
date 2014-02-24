@@ -1,0 +1,15 @@
+extends layout
+
+block head
+	link(rel='stylesheet', href='/stylesheets/chat.css')
+	script(src='/socket.io/socket.io.js')
+	script(type='text/javascript', src='/javascripts/chat.js')
+
+
+
+block content
+	h1 Chat
+	p Benvenuti nella chat real time!
+	div#chatContent.form-control
+	input#sendField.form-control
+	input(type='button' value='Invia')#sendButton.btn.btn-primary

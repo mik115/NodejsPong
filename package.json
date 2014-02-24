@@ -1,0 +1,16 @@
+{
+  "name": "nodeJade",
+  "version": "0.0.0",
+  "description": "nodeJade",
+  "main": "app.js",
+  "author": {
+    "name": "Developer",
+    "email": ""
+  },
+  "dependencies": {
+    "express": "3.4.4",
+    "jade": "*",
+    "stylus": "*",
+    "socket.io": "~0.9.16"
+  }
+}

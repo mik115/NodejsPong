@@ -1,0 +1,10 @@
+#playersScore p{
+	display: inline-block;
+	margin-right: 30px;
+	font-size: 50;
+	font-weight: bold;
+}
+
+.score{
+	font-size: 80;
+}
